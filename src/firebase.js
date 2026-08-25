@@ -3,12 +3,12 @@ import { initializeAuth, browserLocalPersistence } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBGc1iWH_bQCBV5tMkCsX3pASx_CP6MEmA",
-  authDomain: "iel-margin-tracker.firebaseapp.com",
-  projectId: "iel-margin-tracker",
-  storageBucket: "iel-margin-tracker.firebasestorage.app",
-  messagingSenderId: "345700353726",
-  appId: "1:345700353726:web:12e50df441cd5e8bee40ef"
+  apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
+  authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.REACT_APP_FIREBASE_APP_ID,
 };
 
 const app = initializeApp(firebaseConfig);
