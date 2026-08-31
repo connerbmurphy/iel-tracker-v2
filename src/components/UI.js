@@ -25,7 +25,7 @@ export const S = {
   addChip: { display:'flex', alignItems:'center', gap:5, padding:'8px 12px', borderRadius:20, border:`1.5px dashed ${C.border}`, background:'transparent', color:C.primary, fontSize:12.5, fontWeight:600, cursor:'pointer' },
   hourLabel: { fontSize:11.5, color:C.inkSoft, fontWeight:600, marginBottom:5 },
   settingsGrid: { display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 },
-  bottomBar: { position:'fixed', bottom:0, left:'50%', transform:'translateX(-50%)', width:'100%', maxWidth:480, display:'flex', gap:10, padding:'14px 16px', background:C.bg, borderTop:`1px solid ${C.border}`, zIndex:10 },
+  bottomBar: { position:'fixed', bottom:60, left:'50%', transform:'translateX(-50%)', width:'100%', maxWidth:480, display:'flex', gap:10, padding:'14px 16px', background:C.bg, borderTop:`1px solid ${C.border}`, zIndex:25 },
   btnPrimary: { flex:2, padding:'13px 0', borderRadius:10, border:'none', background:C.primary, color:'#fff', fontSize:15, fontWeight:700, cursor:'pointer' },
   btnSecondary: { flex:1, padding:'13px 0', borderRadius:10, border:`1.5px solid ${C.border}`, background:'#fff', color:C.ink, fontSize:15, fontWeight:700, cursor:'pointer' },
   btnPrimarySmall: { padding:'10px 16px', borderRadius:9, border:'none', background:C.primary, color:'#fff', fontSize:13, fontWeight:700, cursor:'pointer', whiteSpace:'nowrap' },
