@@ -179,6 +179,7 @@ export function AppProvider({ accountId, children }) {
       return false;
     },
     lockManager: () => setManagerUnlocked(false),
+    saveJobs,
     saveSettings,
     saveRates, saveEquipment, saveTrucks, saveTrailers, saveStockItems, saveEmployees,
   };

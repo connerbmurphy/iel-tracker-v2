@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChevronRight, LogIn, LogOut, Sprout, Package } from 'lucide-react';
+import { ChevronRight, LogIn, LogOut, Sprout, Package, ChevronUp, ChevronDown } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
 import { computeJobCosts } from '../utils/costing';
 import { fmtMoney, nowTimeStr } from '../utils/helpers';
@@ -9,6 +9,7 @@ export default function HomeScreen({ onNav }) {
   const app = useApp();
   const { jobs, punches, plantsRec, materialsRec, equipmentLog, truckLog, trailerLog,
           rates, equipment, trucks, trailers, stockItems, employees, actions } = app;
+  const moveJob = (id, dir) => { const a=[...(jobs||[])]; const i=a.findIndex(j=>j.id===id),n=i+dir; if(n<0||n>=a.length)return; [a[i],a[n]]=[a[n],a[i]]; actions.saveJobs(a); };
 
   const active = jobs.filter(j => j.status === 'active');
   const completed = jobs.filter(j => j.status === 'complete');
@@ -26,16 +27,23 @@ export default function HomeScreen({ onNav }) {
         const hasData = c.laborHours > 0 || c.plantCost > 0 || c.materialsCost > 0;
         return (
           <div key={job.id} style={{ background:C.card, borderRadius:14, border:`1px solid ${C.border}`, padding:16, display:'flex', flexDirection:'column', gap:12, marginBottom:14 }}>
-            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', cursor:'pointer' }} onClick={() => onNav('jobDetail', job.id)}>
-              <div>
-                <div style={{ fontWeight:700, fontSize:16.5, color:C.ink }}>{job.name}</div>
+            <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between' }}>
+              <div style={{ flex:1, cursor:'pointer' }} onClick={() => onNav('jobDetail', job.id)}>
+                <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                  <div style={{ fontWeight:700, fontSize:16.5, color:C.ink }}>{job.name}</div>
+                  {job.bidTotal > 0 && <div style={{ fontSize:12.5, fontWeight:700, color:C.primary }}>${Number(job.bidTotal).toLocaleString()}</div>}
+                </div>
+                {job.notes ? <div style={{ fontSize:12, color:C.inkFaint, marginTop:2 }}>{job.notes}</div> : null}
                 <div style={{ fontSize:12.5, color:C.inkFaint, marginTop:2 }}>
                   {c.activePunches.length > 0
                     ? <span style={{ color:C.gold, fontWeight:600 }}>* {c.activePunches.length} clocked in</span>
                     : hasData ? `${c.laborHours.toFixed(1)} labor hrs - ${fmtMoney(c.totalCOGS)} COGS` : 'No data yet'}
                 </div>
               </div>
-              <ChevronRight size={18} color="#a8b5ac" />
+              <div style={{ display:'flex', flexDirection:'column', gap:2, marginLeft:8 }}>
+                <button style={S.reorderBtn} onClick={()=>moveJob(job.id,-1)} disabled={active.indexOf(job)===0}>^</button>
+                <button style={S.reorderBtn} onClick={()=>moveJob(job.id,1)} disabled={active.indexOf(job)===active.length-1}>v</button>
+              </div>
             </div>
             {hasData && (
               <div style={{ display:'flex', alignItems:'center', gap:10, cursor:'pointer' }} onClick={() => onNav('jobDetail', job.id)}>
@@ -70,6 +78,10 @@ export default function HomeScreen({ onNav }) {
           </div>
         );
       })}
+
+      <button style={{ ...S.addChip, width:'100%', justifyContent:'center', marginBottom:16 }} onClick={() => onNav('settings')}>
+        <LogIn size={13}/> Add new job
+      </button>
 
       {completed.length > 0 && (
         <>

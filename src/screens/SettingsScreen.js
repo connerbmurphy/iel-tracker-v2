@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, X } from 'lucide-react';
+import { Plus, X, ChevronDown, ChevronUp } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
 import { uid } from '../utils/helpers';
 import { Card, FieldLabel, NumberInput, S, C, SectionLabel, Hint, useToast, Toast } from '../components/UI';
@@ -20,7 +20,8 @@ export default function SettingsScreen() {
     showToast('Job added');
   };
 
-  const updJob = (id, patch) => actions.updateJob({ ...jobs.find(j=>j.id===id), ...patch });
+  const updJob = (id, patch) => actions.updateJob({ ...(jobs||[]).find(j=>j.id===id), ...patch });
+  const moveJob = (id, dir) => { const a=[...(jobs||[])]; const i=a.findIndex(j=>j.id===id),n=i+dir; if(n<0||n>=a.length)return; [a[i],a[n]]=[a[n],a[i]]; actions.saveJobs(a); };
   const updStock = (id, patch) => actions.saveStockItems(stockItems.map(s=>s.id===id?{...s,...patch}:s));
   const moveStock = (id, dir) => { const i=stockItems.findIndex(s=>s.id===id),n=i+dir; if(n<0||n>=stockItems.length)return; const a=[...stockItems];[a[i],a[n]]=[a[n],a[i]];actions.saveStockItems(a); };
   const updEquip = (id, patch) => actions.saveEquipment(equipment.map(e=>e.id===id?{...e,...patch}:e));
@@ -44,25 +45,7 @@ export default function SettingsScreen() {
 
       {tab === 'jobs' && (
         <>
-          {jobs.map(job => (
-            <Card key={job.id}>
-              <input style={S.textInputBig} value={job.name} onChange={e=>updJob(job.id,{name:e.target.value})} />
-              <div style={S.settingsGrid}>
-                <div><div style={S.hourLabel}>Bid total ($)</div><NumberInput value={job.bidTotal} onChange={v=>updJob(job.id,{bidTotal:v})} suffix="$" /></div>
-                <div><div style={S.hourLabel}>Target margin (%)</div><NumberInput value={job.targetMargin} onChange={v=>updJob(job.id,{targetMargin:v})} suffix="%" /></div>
-                <div><div style={S.hourLabel}>Target labor hrs</div><NumberInput value={job.bidLaborHours} onChange={v=>updJob(job.id,{bidLaborHours:v})} suffix="hrs" /></div>
-                <div><div style={S.hourLabel}>Status</div><select style={{ ...S.select, flex:'unset', width:'100%' }} value={job.status} onChange={e=>updJob(job.id,{status:e.target.value})}><option value="active">Active</option><option value="complete">Complete</option></select></div>
-                <div style={{ gridColumn:'span 2' }}><div style={S.hourLabel}>Notes</div><input style={{ ...S.textInput, flex:'unset', width:'100%' }} value={job.notes||''} onChange={e=>updJob(job.id,{notes:e.target.value})} placeholder="Start date, gate code, client notes..." /></div>
-              </div>
-            </Card>
-          ))}
-          <Card>
-            <FieldLabel>Add a job</FieldLabel>
-            <div style={{ display:'flex', gap:8 }}>
-              <input style={{ ...S.textInput, flex:2 }} placeholder="Client first and last name" value={newJobName} onChange={e=>setNewJobName(e.target.value)} />
-              <button style={S.btnPrimarySmall} onClick={addJob}>Add</button>
-            </div>
-          </Card>
+          <JobsTab jobs={jobs||[]} moveJob={moveJob} updJob={updJob} newJobName={newJobName} setNewJobName={setNewJobName} addJob={addJob} />
         </>
       )}
 
@@ -145,6 +128,60 @@ export default function SettingsScreen() {
 
       {tab === 'manager' && <ManagerSettings settings={settings} actions={actions} managerUnlocked={managerUnlocked} />}
     </div>
+  );
+}
+
+function JobsTab({ jobs, moveJob, updJob, newJobName, setNewJobName, addJob }) {
+  const [openId, setOpenId] = useState(null);
+
+  return (
+    <>
+      {jobs.map((job, i) => {
+        const isOpen = openId === job.id;
+        return (
+          <div key={job.id} style={S.panelCard}>
+            <div style={{ display:'flex', alignItems:'center', gap:8, padding:'12px 14px', cursor:'pointer' }}>
+              <div style={{ display:'flex', flexDirection:'column', gap:2 }}>
+                <button style={S.reorderBtn} onClick={e=>{e.stopPropagation();moveJob(job.id,-1);}} disabled={i===0}>^</button>
+                <button style={S.reorderBtn} onClick={e=>{e.stopPropagation();moveJob(job.id,1);}} disabled={i===jobs.length-1}>v</button>
+              </div>
+              <div style={{ flex:1 }} onClick={() => setOpenId(isOpen ? null : job.id)}>
+                <div style={{ fontWeight:700, fontSize:15, color:'#22301f' }}>{job.name}</div>
+                <div style={{ fontSize:12, color:'#8a9a8e', marginTop:2 }}>
+                  {job.bidTotal ? `$${Number(job.bidTotal).toLocaleString()}` : 'No bid total'}{job.notes ? ` - ${job.notes}` : ''}
+                </div>
+              </div>
+              <div onClick={() => setOpenId(isOpen ? null : job.id)}>
+                {isOpen ? <ChevronUp size={18} color="#8a9a8e" /> : <ChevronDown size={18} color="#8a9a8e" />}
+              </div>
+            </div>
+            {isOpen && (
+              <div style={{ padding:'0 14px 14px', borderTop:`1px solid #e2e0d6` }}>
+                <input style={S.textInputBig} value={job.name} onChange={e=>updJob(job.id,{name:e.target.value})} placeholder="Job name" />
+                <div style={S.settingsGrid}>
+                  <div><div style={S.hourLabel}>Bid total ($)</div><NumberInput value={job.bidTotal} onChange={v=>updJob(job.id,{bidTotal:v})} suffix="$" /></div>
+                  <div><div style={S.hourLabel}>Target margin (%)</div><NumberInput value={job.targetMargin} onChange={v=>updJob(job.id,{targetMargin:v})} suffix="%" /></div>
+                  <div><div style={S.hourLabel}>Target labor hrs</div><NumberInput value={job.bidLaborHours} onChange={v=>updJob(job.id,{bidLaborHours:v})} suffix="hrs" /></div>
+                  <div><div style={S.hourLabel}>Status</div>
+                    <select style={{ ...S.select, flex:'unset', width:'100%' }} value={job.status} onChange={e=>updJob(job.id,{status:e.target.value})}>
+                      <option value="active">Active</option>
+                      <option value="complete">Complete</option>
+                    </select>
+                  </div>
+                  <div style={{ gridColumn:'span 2' }}><div style={S.hourLabel}>Notes</div>
+                    <input style={{ ...S.textInput, flex:'unset', width:'100%' }} value={job.notes||''} onChange={e=>updJob(job.id,{notes:e.target.value})} placeholder="Start date, gate code, client notes..." />
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })}
+      <div style={{ display:'flex', gap:8, marginTop:10 }}>
+        <input style={{ ...S.textInput, flex:2 }} placeholder="Client first and last name" value={newJobName} onChange={e=>setNewJobName(e.target.value)} onKeyDown={e=>e.key==='Enter'&&addJob()} />
+        <button style={S.btnPrimarySmall} onClick={addJob}><Plus size={14}/> Add job</button>
+      </div>
+    </>
   );
 }
 
