@@ -18,15 +18,12 @@ function ReportsContent() {
   const [selectedWeek, setSelectedWeek] = useState(weekStr(todayStr()));
   const [selectedMonth, setSelectedMonth] = useState(monthStr(todayStr()));
 
-  // Build list of available weeks from punches
   const weeks = [...new Set(punches.filter(p=>p.clockIn&&p.clockOut).map(p=>weekStr(p.date)))].sort().reverse();
   const months = [...new Set(punches.filter(p=>p.clockIn&&p.clockOut).map(p=>monthStr(p.date)))].sort().reverse();
 
-  // Weekly punch data for selected week
   const weekPunches = punches.filter(p => p.clockIn && p.clockOut && weekStr(p.date) === selectedWeek);
   const monthPunches = punches.filter(p => p.clockIn && p.clockOut && monthStr(p.date) === selectedMonth);
 
-  // Monthly bonus for selected month
   const monthBonuses = bonusCalcs.filter(b => {
     const job = jobs.find(j => j.id === b.jobId);
     return job && monthStr(b.savedAt?.slice(0,10) || todayStr()) === selectedMonth;
@@ -36,22 +33,56 @@ function ReportsContent() {
   const getJob = (jobId) => jobs.find(j => j.id === jobId)?.name || jobId;
   const getEmp = (crewId) => employees.find(e => e.id === crewId);
 
-  // Export weekly CSV
+  // Export weekly CSV — sorted by employee name, subtotal row per employee
   const exportWeekly = () => {
     const header = 'Employee_ID,Employee_Name,Date,Clock_In,Clock_Out,Total_Hours,Job_Name\n';
-    const rows = weekPunches.map(p => {
+
+    // Sort punches by employee name, then by date within each employee
+    const sorted = [...weekPunches].sort((a, b) => {
+      const nameA = getEmp(a.crewId)?.name || '';
+      const nameB = getEmp(b.crewId)?.name || '';
+      if (nameA !== nameB) return nameA.localeCompare(nameB);
+      return a.date.localeCompare(b.date);
+    });
+
+    // Group by employee and build rows with subtotal after each group
+    let rows = '';
+    let currentEmpId = null;
+    let empTotal = 0;
+    let empName = '';
+    let empID = '';
+
+    sorted.forEach((p, i) => {
       const emp = getEmp(p.crewId);
       const hrs = getHrs(p);
-      return `${emp?.employeeId||''},${emp?.name||''},${p.date},${p.clockIn||''},${p.clockOut||''},${hrs.toFixed(2)},${getJob(p.jobId)}`;
-    }).join('\n');
-    downloadCSV(`IEL_Weekly_Payroll_${selectedWeek}.csv`, header+rows);
+
+      // When employee changes, write subtotal for previous employee
+      if (currentEmpId !== null && p.crewId !== currentEmpId) {
+        rows += `${empID},${empName} — Total,,,,${empTotal.toFixed(2)},\n`;
+        rows += '\n';
+        empTotal = 0;
+      }
+
+      currentEmpId = p.crewId;
+      empName = emp?.name || '';
+      empID = emp?.employeeId || '';
+      empTotal += hrs;
+
+      rows += `${empID},${empName},${p.date},${p.clockIn||''},${p.clockOut||''},${hrs.toFixed(2)},${getJob(p.jobId)}\n`;
+    });
+
+    // Subtotal for the last employee
+    if (currentEmpId !== null) {
+      rows += `${empID},${empName} — Total,,,,${empTotal.toFixed(2)},\n`;
+    }
+
+    downloadCSV(`IEL_Weekly_Payroll_${selectedWeek}.csv`, header + rows);
   };
 
   // Export monthly CSV (hours + bonuses)
   const exportMonthly = () => {
     let content = `IEL Monthly Report - ${selectedMonth}\n\n`;
 
-    // Hours section
     content += 'HOURS LOG\n';
     content += 'Employee_ID,Employee_Name,Date,Clock_In,Clock_Out,Total_Hours,Job_Name\n';
     monthPunches.forEach(p => {
@@ -60,7 +91,6 @@ function ReportsContent() {
       content += `${emp?.employeeId||''},${emp?.name||''},${p.date},${p.clockIn||''},${p.clockOut||''},${hrs.toFixed(2)},${getJob(p.jobId)}\n`;
     });
 
-    // Monthly hours summary per employee
     content += '\nMONTHLY HOURS SUMMARY\n';
     content += 'Employee_ID,Employee_Name,Total_Hours\n';
     employees.forEach(emp => {
@@ -68,7 +98,6 @@ function ReportsContent() {
       if (hrs > 0) content += `${emp.employeeId},${emp.name},${hrs.toFixed(2)}\n`;
     });
 
-    // Bonus section
     if (monthBonuses.length > 0) {
       content += '\nBONUS CALCULATIONS\n';
       content += 'Job,Employee_ID,Employee_Name,Final_Points,Share_%,Payout\n';
