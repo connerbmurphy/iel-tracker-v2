@@ -15,11 +15,13 @@ export default function ReportsScreen() {
 
 function ReportsContent() {
   const { punches, employees, jobs, bonusCalcs } = useApp();
-  const [selectedWeek, setSelectedWeek] = useState(weekStr(todayStr()));
-  const [selectedMonth, setSelectedMonth] = useState(monthStr(todayStr()));
 
+  // Build week/month lists first so we can default to the most recent with data
   const weeks = [...new Set(punches.filter(p=>p.clockIn&&p.clockOut).map(p=>weekStr(p.date)))].sort().reverse();
   const months = [...new Set(punches.filter(p=>p.clockIn&&p.clockOut).map(p=>monthStr(p.date)))].sort().reverse();
+
+  const [selectedWeek, setSelectedWeek] = useState(weeks[0] || weekStr(todayStr()));
+  const [selectedMonth, setSelectedMonth] = useState(months[0] || monthStr(todayStr()));
 
   const weekPunches = punches.filter(p => p.clockIn && p.clockOut && weekStr(p.date) === selectedWeek);
   const monthPunches = punches.filter(p => p.clockIn && p.clockOut && monthStr(p.date) === selectedMonth);
@@ -37,7 +39,6 @@ function ReportsContent() {
   const exportWeekly = () => {
     const header = 'Employee_ID,Employee_Name,Date,Clock_In,Clock_Out,Total_Hours,Job_Name\n';
 
-    // Sort punches by employee name, then by date within each employee
     const sorted = [...weekPunches].sort((a, b) => {
       const nameA = getEmp(a.crewId)?.name || '';
       const nameB = getEmp(b.crewId)?.name || '';
@@ -45,18 +46,16 @@ function ReportsContent() {
       return a.date.localeCompare(b.date);
     });
 
-    // Group by employee and build rows with subtotal after each group
     let rows = '';
     let currentEmpId = null;
     let empTotal = 0;
     let empName = '';
     let empID = '';
 
-    sorted.forEach((p, i) => {
+    sorted.forEach((p) => {
       const emp = getEmp(p.crewId);
       const hrs = getHrs(p);
 
-      // When employee changes, write subtotal for previous employee
       if (currentEmpId !== null && p.crewId !== currentEmpId) {
         rows += `${empID},${empName} — Total,,,,${empTotal.toFixed(2)},\n`;
         rows += '\n';
@@ -71,7 +70,6 @@ function ReportsContent() {
       rows += `${empID},${empName},${p.date},${p.clockIn||''},${p.clockOut||''},${hrs.toFixed(2)},${getJob(p.jobId)}\n`;
     });
 
-    // Subtotal for the last employee
     if (currentEmpId !== null) {
       rows += `${empID},${empName} — Total,,,,${empTotal.toFixed(2)},\n`;
     }
