@@ -11,7 +11,7 @@ export default function HomeScreen({ onNav }) {
           rates, equipment, trucks, trailers, stockItems, employees, actions } = app;
 
   const active = jobs.filter(j => j.status === 'active');
-  const completed = jobs.filter(j => j.status === 'complete');
+  const completed = jobs.filter(j => j.status === 'complete').sort((a,b) => (b.completedAt||'').localeCompare(a.completedAt||''));
 
   return (
     <div style={S.screen}>

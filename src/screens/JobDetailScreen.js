@@ -97,7 +97,7 @@ function CostsTab({ job, c, rates, equipment, trucks, trailers, stockItems, plan
 
       {job.status === 'active' && (
         <button style={{ marginTop:16, width:'100%', padding:'13px 0', borderRadius:10, border:`1.5px solid ${C.primary}`, background:'transparent', color:C.primary, fontSize:14, fontWeight:700, cursor:'pointer' }}
-          onClick={() => onUpdateJob({ ...job, status:'complete' })}>Mark job complete</button>
+          onClick={() => onUpdateJob({ ...job, status:'complete', completedAt: new Date().toISOString() })}>Mark job complete</button>
       )}
       {job.status === 'complete' && <DeleteJobConfirm jobName={job.name} onConfirm={onDeleteJob} />}
     </>
