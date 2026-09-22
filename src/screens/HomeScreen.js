@@ -12,7 +12,7 @@ export default function HomeScreen({ onNav }) {
   const moveJob = (id, dir) => { const a=[...(jobs||[])]; const i=a.findIndex(j=>j.id===id),n=i+dir; if(n<0||n>=a.length)return; [a[i],a[n]]=[a[n],a[i]]; actions.saveJobs(a); };
 
   const active = jobs.filter(j => j.status === 'active');
-  const completed = jobs.filter(j => j.status === 'complete');
+  const completed = jobs.filter(j => j.status === 'complete').sort((a,b) => (b.completedAt||b.id).localeCompare(a.completedAt||a.id));
 
   return (
     <div style={S.screen}>
